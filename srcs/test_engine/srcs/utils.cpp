@@ -117,7 +117,6 @@ std::vector<float> loadImage(const std::string& image_path)
         throw std::runtime_error("Failed to load image");
     }
     std::cout << "Image size: " << img.cols << "x" << img.rows << std::endl;
-
     // Resize image to 256x256
     cv::Mat resized_img;
     cv::resize(img, resized_img, cv::Size(256, 256));
