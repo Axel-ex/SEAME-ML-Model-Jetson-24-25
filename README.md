@@ -2,7 +2,7 @@
 
 This repo should be cloned on the JETSON NANO. It contains code that uses the TensorRT API correctly. This should serve as a reference when developing code in C++ with TensorRT.
 
-WARNING: Make sure you have a .engine at the root of the repo before running the program.
+WARNING: Make sure you have a .engine called "correct.engine" at the root of the repo before running the program (the path is hardcoded).
 
 ### Compilation
 ```bash
