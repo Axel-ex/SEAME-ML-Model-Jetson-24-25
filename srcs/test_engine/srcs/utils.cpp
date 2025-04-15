@@ -81,7 +81,7 @@ void checkEngineSpecs(nvinfer1::ICudaEngine* engine)
 
 void debugOutput(const std::vector<float>& output_data, cv::Mat& output_image)
 {
-    // Normalize output to 0-255 range for visualization
+    // Normalize output to 0-255 range
     cv::Mat display_output;
     cv::normalize(output_image, display_output, 0, 255, cv::NORM_MINMAX,
                   CV_8UC1);
@@ -93,13 +93,8 @@ void debugOutput(const std::vector<float>& output_data, cv::Mat& output_image)
     std::cout << "Output value range: " << min_val << " to " << max_val
               << std::endl;
 
-    // Option 1: Try inverting the mask if that seems appropriate
-    cv::Mat inverted_output;
-    cv::bitwise_not(display_output, inverted_output);
-    cv::imwrite("results/inverted_output.jpg", inverted_output);
-
-    // Option 3: Try different threshold values
-    float threshold = 0.1;
+    // Apply treshold
+    float threshold = 0.3;
     cv::Mat thresholded_output = output_image > threshold;
     cv::imwrite("results/thresholded_output.jpg", thresholded_output);
 }
@@ -108,7 +103,6 @@ std::vector<float> loadImage(const std::string& image_path)
 {
     // IMAGE LOADING/RESIZING PART --> this is now a function
     fs::create_directory("results");
-    cv::imwrite("results/original_pic.jpg", cv::imread(image_path));
 
     // Load color image
     cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
@@ -117,11 +111,11 @@ std::vector<float> loadImage(const std::string& image_path)
         throw std::runtime_error("Failed to load image");
     }
     std::cout << "Image size: " << img.cols << "x" << img.rows << std::endl;
+
     // Resize image to 256x256
     cv::Mat resized_img;
     cv::resize(img, resized_img, cv::Size(256, 256));
     std::cout << "Resized image size: " << resized_img.size() << std::endl;
-    cv::imwrite("results/resized_image.jpg", resized_img);
 
     // Preparing vector where image data will be stored
     std::vector<float> og_image(256 * 256 * 3);
@@ -135,22 +129,12 @@ std::vector<float> loadImage(const std::string& image_path)
             // Store the pixel data in the og_image vector (RGB channels) -->
             // normalized by dividing by 255
             og_image[(y * resized_img.cols + x) * 3] =
-                static_cast<float>(pixel[0]) / 255.0f; // Red channel
+                static_cast<float>(pixel[2]) / 255.0f; // Red channel
             og_image[(y * resized_img.cols + x) * 3 + 1] =
                 static_cast<float>(pixel[1]) / 255.0f; // Green channel
             og_image[(y * resized_img.cols + x) * 3 + 2] =
-                static_cast<float>(pixel[2]) / 255.0f; // Blue channel
+                static_cast<float>(pixel[0]) / 255.0f; // Blue channel
         }
     }
-
-    // Create a cv::Mat from the normalized image data --- > only to see it
-    cv::Mat normalizedImg(resized_img.rows, resized_img.cols, CV_32FC3,
-                          og_image.data());
-    // Convert the image back to a displayable format (0-255 range)
-    cv::Mat displayImg;
-    normalizedImg.convertTo(displayImg, CV_8UC3, 255.0);
-    // Save or show the image
-    cv::imwrite("results/normalized_image.jpg", displayImg);
-
     return og_image;
 }
