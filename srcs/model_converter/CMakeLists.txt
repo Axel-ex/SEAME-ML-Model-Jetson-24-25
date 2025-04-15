@@ -23,7 +23,6 @@ include_directories(includes)
 
 add_executable(${PROJECT_NAME}
   srcs/main.cpp
-  srcs/utils.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
