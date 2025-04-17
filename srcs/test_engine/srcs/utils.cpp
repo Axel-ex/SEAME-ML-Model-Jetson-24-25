@@ -115,7 +115,6 @@ std::vector<float> loadImage(const std::string& image_path)
     // Resize image to 256x256
     cv::Mat resized_img;
     cv::resize(img, resized_img, cv::Size(256, 256));
-    std::cout << "Resized image size: " << resized_img.size() << std::endl;
 
     // Preparing vector where image data will be stored
     std::vector<float> og_image(256 * 256 * 3);
