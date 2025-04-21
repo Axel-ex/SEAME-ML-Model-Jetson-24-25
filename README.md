@@ -4,6 +4,10 @@ This repo should be cloned on the JETSON NANO. It contains code that uses the Te
 
 WARNING: Make sure you have a .engine called "correct.engine" at the root of the repo before running the program (the path is hardcoded).
 
+### Repo structure
+*test_engine*: inference on a single frame for debugging purpose.
+*benchmarker*: Loads, test various engines and their timing to run inference.
+
 ### Compilation
 ```bash
 cd srcs

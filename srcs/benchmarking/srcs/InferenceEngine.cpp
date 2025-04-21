@@ -4,14 +4,7 @@
 
 InferenceEngine::InferenceEngine() {}
 
-/**
- * @brief Initializes the inference engine: loads the serialized engine, creates
- * context, and allocates memory.
- *
- * @return true if all components were successfully initialized, false
- * otherwise.
- */
-bool InferenceEngine::init()
+bool InferenceEngine::initRuntime()
 {
     Logger logger;
     runtime_.reset(createInferRuntime(logger));
@@ -20,8 +13,12 @@ bool InferenceEngine::init()
         std::cerr << "Fail creating runtime\n";
         return false;
     }
+    return true;
+}
 
-    engine_.reset(createCudaEngine());
+bool InferenceEngine::loadEngine(const std::string& engine_path)
+{
+    engine_.reset(createCudaEngine(engine_path));
     if (!engine_)
     {
         std::cerr << "Fail creating engine\n";
@@ -47,9 +44,9 @@ bool InferenceEngine::init()
  *
  * @return Pointer to the created ICudaEngine object.
  */
-ICudaEngine* InferenceEngine::createCudaEngine()
+ICudaEngine* InferenceEngine::createCudaEngine(const std::string& engine_path)
 {
-    std::ifstream infile(ENGINE_PATH, std::ios::binary);
+    std::ifstream infile(engine_path, std::ios::binary);
     if (!infile)
     {
         std::cerr << "Couldnt open engine file\n";

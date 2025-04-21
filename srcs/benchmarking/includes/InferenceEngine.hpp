@@ -65,7 +65,8 @@ class InferenceEngine
         InferenceEngine();
         ~InferenceEngine() = default;
 
-        bool init();
+        bool initRuntime();
+        bool loadEngine(const std::string& engine_path);
         bool runInference(const std::vector<float>& flat_img) const;
         float* getOutputDevicePtr() const;
 
@@ -78,6 +79,6 @@ class InferenceEngine
         CudaUniquePtr<void> d_input_;
         CudaUniquePtr<void> d_output_;
 
-        ICudaEngine* createCudaEngine();
+        ICudaEngine* createCudaEngine(const std::string& engine_name);
         void allocateDevices();
 };

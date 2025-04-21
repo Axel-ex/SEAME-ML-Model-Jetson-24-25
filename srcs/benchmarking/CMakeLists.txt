@@ -25,6 +25,7 @@ add_executable(${PROJECT_NAME}
   srcs/main.cpp
   srcs/InferenceEngine.cpp
   srcs/Logger.cpp
+  srcs/Benchmarker.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
