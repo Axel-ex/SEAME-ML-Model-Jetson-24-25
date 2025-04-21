@@ -23,7 +23,7 @@ bool InferenceEngine::loadEngine(const std::string& engine_path)
         std::cerr << "Fail creating engine\n";
         return false;
     }
-    std::cout << "Engine created\n";
+    std::cout << "opt profiles: " << engine_->getNbOptimizationProfiles();
 
     context_.reset(engine_->createExecutionContext());
     if (!context_)
@@ -31,7 +31,6 @@ bool InferenceEngine::loadEngine(const std::string& engine_path)
         std::cerr << "Fail creating context\n";
         return false;
     }
-    std::cout << "Context created\n";
 
     input_size_ = 1;
     output_size_ = 1;
@@ -56,7 +55,6 @@ ICudaEngine* InferenceEngine::createCudaEngine(const std::string& engine_path)
         std::cerr << "Couldnt open engine file\n";
         return nullptr;
     }
-    std::cout << "file exist\n";
 
     infile.seekg(0, std::ios::end);
     auto size = infile.tellg();

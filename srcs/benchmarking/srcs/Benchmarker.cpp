@@ -18,12 +18,16 @@ void Benchmarker::runBenchmarking(const std::string& models_path,
 
     for (const auto& dir_entry : it_models)
     {
-        fmt::print("[{}]: {}\n",
+        fmt::print("\n[{}]: {}\n",
                    fmt::format(fmt::fg(fmt::color::cyan), "TESTING"),
                    dir_entry.path().string());
 
         if (!inference_engine_.loadEngine(dir_entry.path().string()))
             continue;
+
+        fmt::print("[{}]: {}....\n",
+                   fmt::format(fmt::fg(fmt::color::cyan), "TESTING"),
+                   "Running inference");
 
         int processed_pics{};
         auto start = std::chrono::high_resolution_clock::now();
