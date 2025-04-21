@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Logger.hpp"
 #include <NvInfer.h>
 #include <iostream>
 #include <memory>
@@ -74,6 +75,7 @@ class InferenceEngine
         TrtUniquePtr<IRuntime> runtime_;
         TrtUniquePtr<IExecutionContext> context_;
         TrtUniquePtr<ICudaEngine> engine_;
+        Logger logger_;
         size_t input_size_{1};
         size_t output_size_{1};
         CudaUniquePtr<void> d_input_;

@@ -18,7 +18,8 @@ int main(int argc, char** argv)
 
     if (!benchmarker.init())
         return EXIT_FAILURE;
-
+    fmt::print("[{}]: {}\n", fmt::format(fmt::fg(fmt::color::green), "SUCESS"),
+               "Runtime succefully created");
     benchmarker.runBenchmarking(models_path, images_path);
 
     return EXIT_SUCCESS;

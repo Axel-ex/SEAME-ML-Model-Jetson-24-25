@@ -15,25 +15,26 @@ void Benchmarker::runBenchmarking(const std::string& models_path,
                                   const std::string& images_path)
 {
     std::filesystem::recursive_directory_iterator it_models(models_path);
-    std::filesystem::recursive_directory_iterator it_images(images_path);
 
     for (const auto& dir_entry : it_models)
     {
-        fmt::print("{}: {}",
-                   fmt::format(fmt::fg(fmt::color::cyan), "[TESTING]"),
+        fmt::print("[{}]: {}\n",
+                   fmt::format(fmt::fg(fmt::color::cyan), "TESTING"),
                    dir_entry.path().string());
+
         if (!inference_engine_.loadEngine(dir_entry.path().string()))
             continue;
 
         int processed_pics{};
         auto start = std::chrono::high_resolution_clock::now();
+        std::filesystem::recursive_directory_iterator it_images(images_path);
         for (const auto& image : it_images)
         {
             auto flat_image = loadImage(image.path().string());
             if (flat_image.empty())
             {
-                fmt::print("{}: couldn't read {}",
-                           fmt::format(fmt::fg(fmt::color::red), "[ERROR]"),
+                fmt::print("[{}]: couldn't read {}\n",
+                           fmt::format(fmt::fg(fmt::color::red), "ERROR"),
                            image.path().string());
                 continue;
             }
@@ -43,10 +44,11 @@ void Benchmarker::runBenchmarking(const std::string& models_path,
 
         auto end = std::chrono::high_resolution_clock::now();
         auto duration =
-            std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::chrono::duration_cast<std::chrono::seconds>(end - start);
 
-        fmt::print("{}: processed {} pics in {}\n",
-                   fmt::format(fmt::fg(fmt::color::green), "[RESULT]"),
+        // TODO: how fast can it process 1 frame
+        fmt::print("[{}]: processed {} pics in {}s\n",
+                   fmt::format(fmt::fg(fmt::color::green), "RESULT"),
                    processed_pics, duration.count());
     }
 }
@@ -55,7 +57,7 @@ std::vector<float> Benchmarker::loadImage(const std::string& image_path)
 {
     cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
     if (img.empty())
-        std::vector<float>();
+        return {};
 
     // WARN: potential mismatch size / expected input size
     cv::Mat resized_img;

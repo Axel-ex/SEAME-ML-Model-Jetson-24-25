@@ -6,8 +6,7 @@ InferenceEngine::InferenceEngine() {}
 
 bool InferenceEngine::initRuntime()
 {
-    Logger logger;
-    runtime_.reset(createInferRuntime(logger));
+    runtime_.reset(createInferRuntime(logger_));
     if (!runtime_)
     {
         std::cerr << "Fail creating runtime\n";
@@ -24,6 +23,7 @@ bool InferenceEngine::loadEngine(const std::string& engine_path)
         std::cerr << "Fail creating engine\n";
         return false;
     }
+    std::cout << "Engine created\n";
 
     context_.reset(engine_->createExecutionContext());
     if (!context_)
@@ -31,6 +31,10 @@ bool InferenceEngine::loadEngine(const std::string& engine_path)
         std::cerr << "Fail creating context\n";
         return false;
     }
+    std::cout << "Context created\n";
+
+    input_size_ = 1;
+    output_size_ = 1;
 
     allocateDevices();
     if (!d_input_ || !d_output_)
@@ -52,6 +56,7 @@ ICudaEngine* InferenceEngine::createCudaEngine(const std::string& engine_path)
         std::cerr << "Couldnt open engine file\n";
         return nullptr;
     }
+    std::cout << "file exist\n";
 
     infile.seekg(0, std::ios::end);
     auto size = infile.tellg();
