@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-const std::string model_path = "../correct.engine";
+const std::string model_path = "../../models/fp16_optimized.engine";
 
 class Logger : public nvinfer1::ILogger
 {
