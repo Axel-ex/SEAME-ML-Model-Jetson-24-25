@@ -31,9 +31,10 @@ void Logger::log(Severity severity, const char* msg) noexcept
     std::cerr << msg << std::endl;
 }
 
-nvinfer1::ICudaEngine* createEngine(nvinfer1::IRuntime* runtime)
+nvinfer1::ICudaEngine* createEngine(const std::string& engine_path,
+                                    nvinfer1::IRuntime* runtime)
 {
-    std::ifstream file(model_path, std::ios::binary);
+    std::ifstream file(engine_path, std::ios::binary);
     if (!file)
     {
         std::cerr << "Fail to load model: path doesn't exist\n";

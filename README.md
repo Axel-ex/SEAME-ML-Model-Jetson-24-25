@@ -31,13 +31,13 @@ cmake --build build
 ### Inference on a Single Image (Debug/Test Mode)
 
 ```
-./build/test_engine <image_path>
+./build/test_engine <model_path> <image_path>
 ```
 
 Example:
 
 ```
-./build/test_engine ../../images/road.jpg
+./build/test_engine ./optimized.engine ../../images/road.jpg
 ```
 
 ---

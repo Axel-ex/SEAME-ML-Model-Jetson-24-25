@@ -4,15 +4,14 @@
 #include <string>
 #include <vector>
 
-const std::string model_path = "../../models/fp16_optimized.engine";
-
 class Logger : public nvinfer1::ILogger
 {
     public:
         void log(Severity severity, const char* msg) noexcept override;
 };
 
-nvinfer1::ICudaEngine* createEngine(nvinfer1::IRuntime* runtime);
+nvinfer1::ICudaEngine* createEngine(const std::string& engine_path,
+                                    nvinfer1::IRuntime* runtime);
 void checkEngineSpecs(nvinfer1::ICudaEngine* engine);
 std::vector<float> loadImage(const std::string& img_path);
 void debugOutput(const std::vector<float>& output_data, cv::Mat& output_image);

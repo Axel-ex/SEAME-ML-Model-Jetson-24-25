@@ -6,12 +6,13 @@ int main(int argc, char** argv)
 {
     Logger logger;
 
-    if (argc < 2)
+    if (argc < 3)
     {
-        std::cerr << "provide a path to a picture as argument\n";
+        std::cerr << "./test_engine <model_path> <image_path>\n";
         return -1;
     }
-    std::string img_path(argv[1]);
+    std::string engine_path(argv[1]);
+    std::string img_path(argv[2]);
 
     // Create TensorRT runtime - to deserealize model and process inference
     nvinfer1::IRuntime* runtime = nvinfer1::createInferRuntime(logger);
@@ -21,7 +22,7 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    nvinfer1::ICudaEngine* engine = createEngine(runtime);
+    nvinfer1::ICudaEngine* engine = createEngine(engine_path, runtime);
     if (!engine)
     {
         std::cerr << "Error: Failed to deserialize engine" << std::endl;
