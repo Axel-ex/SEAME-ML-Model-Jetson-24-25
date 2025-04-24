@@ -2,9 +2,6 @@
 
 This repository provides example C++ code for running inference using the **TensorRT API** on the **Jetson Nano**. It can serve as a clean reference for building high-performance inference applications using precompiled `.engine` files.
 
-> ⚠️ **Important:**  
-> Make sure you have a TensorRT engine file named `correct.engine` placed at the **root of the repository**. The path is currently hardcoded in the code for simplicity.
-
 ---
 
 ## 📁 Repo Structure
