@@ -70,6 +70,7 @@ class InferenceEngine
         bool loadEngine(const std::string& engine_path);
         bool runInference(const std::vector<float>& flat_img) const;
         float* getOutputDevicePtr() const;
+        void reset();
 
     private:
         TrtUniquePtr<IRuntime> runtime_;

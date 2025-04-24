@@ -18,6 +18,9 @@ void Benchmarker::runBenchmarking(const std::string& models_path,
 
     for (const auto& dir_entry : it_models)
     {
+        if (dir_entry.path().string().find(".engine") == std::string::npos)
+            continue;
+
         fmt::print("\n[{}]: {}\n",
                    fmt::format(fmt::fg(fmt::color::cyan), "TESTING"),
                    dir_entry.path().string());
@@ -50,10 +53,11 @@ void Benchmarker::runBenchmarking(const std::string& models_path,
         auto duration =
             std::chrono::duration_cast<std::chrono::seconds>(end - start);
 
-        // TODO: how fast can it process 1 frame
-        fmt::print("[{}]: processed {} pics in {}s\n",
+        fmt::print("[{}]: processed {} pics in {}s ({}FPS)\n",
                    fmt::format(fmt::fg(fmt::color::green), "RESULT"),
-                   processed_pics, duration.count());
+                   processed_pics, duration.count(),
+                   static_cast<float>(processed_pics) / duration.count());
+        inference_engine_.reset();
     }
 }
 

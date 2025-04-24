@@ -15,6 +15,12 @@ bool InferenceEngine::initRuntime()
     return true;
 }
 
+/**
+ * @brief load engine.
+ *
+ * @param engine_path
+ * @return
+ */
 bool InferenceEngine::loadEngine(const std::string& engine_path)
 {
     engine_.reset(createCudaEngine(engine_path));
@@ -32,14 +38,26 @@ bool InferenceEngine::loadEngine(const std::string& engine_path)
         return false;
     }
 
-    input_size_ = 1;
-    output_size_ = 1;
-
     allocateDevices();
     if (!d_input_ || !d_output_)
         return false;
 
     return true;
+}
+
+/**
+ * @brief reset context, runtime and cuda devices
+ *
+ * Usefull to be able to load another engine afterward.
+ */
+void InferenceEngine::reset()
+{
+    context_.reset();
+    engine_.reset();
+    d_input_.reset();
+    d_output_.reset();
+    input_size_ = 1;
+    output_size_ = 1;
 }
 
 /**
