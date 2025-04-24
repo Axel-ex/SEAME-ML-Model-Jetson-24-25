@@ -1,27 +1,58 @@
-# Overview
+# TensorRT C++ Inference on Jetson Nano
 
-This repo should be cloned on the JETSON NANO. It contains code that uses the TensorRT API correctly. This should serve as a reference when developing code in C++ with TensorRT.
+This repository provides example C++ code for running inference using the **TensorRT API** on the **Jetson Nano**. It can serve as a clean reference for building high-performance inference applications using precompiled `.engine` files.
 
-WARNING: Make sure you have a .engine called "correct.engine" at the root of the repo before running the program (the path is hardcoded).
+> ⚠️ **Important:**  
+> Make sure you have a TensorRT engine file named `correct.engine` placed at the **root of the repository**. The path is currently hardcoded in the code for simplicity.
 
-### Repo structure
-**test_engine**: inference on a single frame for debugging /educational purpose.
+---
 
-**benchmarker**: Loads, test various engines and their timing to run inference.
+## 📁 Repo Structure
 
-### Compilation
-```bash
-cd srcs/<name>
-cmake -Bbuild
+- **`benchmarking/`** — Runs performance benchmarking on multiple `.engine` files. Reports FPS and inference time.
+- **`test_engine/`** — Performs inference on a single image. Useful for debugging or understanding TensorRT integration.
+
+---
+
+## 🛠️ Compilation
+
+You can compile either of the tools using `cmake`:
+
+```
+cd srcs/<name>  # Replace <name> with 'benchmarking' or 'test_engine'
+cmake -B build
 cmake --build build
 ```
 
-### Usage
-```bash
+---
+
+## 🚀 Usage
+
+### Inference on a Single Image (Debug/Test Mode)
+
+```
 ./build/test_engine <image_path>
 ```
-OR
 
-```bash
+Example:
+
+```
+./build/test_engine ../../images/road.jpg
+```
+
+---
+
+### Benchmark Multiple Engines
+
+```
 ./build/benchmarker <models_path> <images_path>
 ```
+
+Example:
+
+```
+./build/benchmarker ../../models/ ../../images/
+```
+
+This will loop through all `.engine` files in the `models_path`, run inference on all images in `images_path`, and report performance metrics like FPS.
+
