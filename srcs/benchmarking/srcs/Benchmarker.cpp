@@ -50,10 +50,9 @@ void Benchmarker::runBenchmarking(const std::string& models_path,
         }
 
         auto end = std::chrono::high_resolution_clock::now();
-        auto duration =
-            std::chrono::duration_cast<std::chrono::seconds>(end - start);
+        auto duration = std::chrono::duration<double>(end - start);
 
-        fmt::print("[{}]: processed {} pics in {}s ({}FPS)\n",
+        fmt::print("[{}]: processed {} pics in {:.2f}s ({:.2f}FPS)\n",
                    fmt::format(fmt::fg(fmt::color::green), "RESULT"),
                    processed_pics, duration.count(),
                    static_cast<float>(processed_pics) / duration.count());
