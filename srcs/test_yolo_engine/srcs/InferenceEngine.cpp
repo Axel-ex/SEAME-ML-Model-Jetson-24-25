@@ -10,6 +10,18 @@
 InferenceEngine::InferenceEngine() {}
 
 /**
+ * @brief Destruct InferenceEngine object
+ *
+ * the order of the destruction has to be specified to avoid any segfault
+ */
+InferenceEngine::~InferenceEngine()
+{
+    context_.reset();
+    engine_.reset();
+    runtime_.reset();
+}
+
+/**
  * @brief Initializes the inference engine: loads the serialized engine, creates
  * context, and allocates memory.
  *
@@ -88,7 +100,6 @@ void InferenceEngine::allocateDevices()
     Dims input_dims = engine_->getBindingDimensions(input_index);
     Dims output_dims = engine_->getBindingDimensions(output_index);
 
-    // WARN: make sure these match the expected input / output of the model
     for (int i = 0; i < input_dims.nbDims; i++)
         input_size_ *= input_dims.d[i];
     input_size_ *= sizeof(float);
@@ -144,4 +155,30 @@ bool InferenceEngine::runInference(const std::vector<float>& flat_img) const
 float* InferenceEngine::getOutputDevicePtr() const
 {
     return static_cast<float*>(d_output_.get());
+}
+
+void InferenceEngine::checkEngineSpecs()
+{
+    int numBindings = engine_->getNbBindings();
+    std::cout << "Number of bindings: " << numBindings << std::endl;
+
+    for (int i = 0; i < numBindings; ++i)
+    {
+        const char* name = engine_->getBindingName(i);
+        nvinfer1::Dims dims = engine_->getBindingDimensions(i);
+        nvinfer1::DataType dtype = engine_->getBindingDataType(i);
+        bool isInput = engine_->bindingIsInput(i);
+
+        std::cout << "Binding index " << i << ": " << name << std::endl;
+        std::cout << "  Is input: " << (isInput ? "Yes" : "No") << std::endl;
+        std::cout << "  Dimensions: ";
+        for (int j = 0; j < dims.nbDims; ++j)
+        {
+            std::cout << dims.d[j] << " ";
+        }
+        std::cout << std::endl;
+        std::cout << "  Data type: "
+                  << (dtype == nvinfer1::DataType::kFLOAT ? "FLOAT" : "Other")
+                  << std::endl;
+    }
 }

@@ -7,10 +7,9 @@
 
 using namespace nvinfer1;
 
-constexpr auto ENGINE_PATH =
-    "/home/axel/SEAME-ADS-Autonomous-lane-detection-24-25/model.engine";
-constexpr auto INPUT_LAYER_NAME = "input_1";
-constexpr auto OUTPUT_LAYER_NAME = "conv2d_14";
+constexpr auto ENGINE_PATH = "/home/axel/models/engines/yolov5n.engine";
+constexpr auto INPUT_LAYER_NAME = "images";
+constexpr auto OUTPUT_LAYER_NAME = "output0";
 
 /**
  * @brief custom deleter for TRT objects
@@ -63,11 +62,12 @@ class InferenceEngine
 {
     public:
         InferenceEngine();
-        ~InferenceEngine() = default;
+        ~InferenceEngine();
 
         bool init();
         bool runInference(const std::vector<float>& flat_img) const;
         float* getOutputDevicePtr() const;
+        void checkEngineSpecs();
 
     private:
         TrtUniquePtr<IRuntime> runtime_;
