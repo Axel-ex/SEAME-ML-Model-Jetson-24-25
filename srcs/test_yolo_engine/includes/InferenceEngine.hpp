@@ -66,8 +66,11 @@ class InferenceEngine
 
         bool init();
         bool runInference(const std::vector<float>& flat_img) const;
-        float* getOutputDevicePtr() const;
         void checkEngineSpecs();
+
+        float* getOutputDevicePtr() const;
+        size_t getInputSize() const;
+        size_t getOuputSize() const;
 
     private:
         TrtUniquePtr<IRuntime> runtime_;

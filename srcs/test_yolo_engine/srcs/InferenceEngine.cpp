@@ -157,6 +157,10 @@ float* InferenceEngine::getOutputDevicePtr() const
     return static_cast<float*>(d_output_.get());
 }
 
+size_t InferenceEngine::getOuputSize() const { return output_size_; }
+
+size_t InferenceEngine::getInputSize() const { return input_size_; }
+
 void InferenceEngine::checkEngineSpecs()
 {
     int numBindings = engine_->getNbBindings();

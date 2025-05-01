@@ -1,19 +1,27 @@
-#include "ImageProcessor.hpp"
-#include <InferenceEngine.hpp>
 #include <Logger.hpp>
 #include <utils.hpp>
 
-const cv::Size INPUT_IMG_SIZE(256, 256); // WARN: check bindings size
-const cv::Size OUTPUT_IMG_SIZE(256, 256);
-const std::string IMAGE_PATH = "../../images/dark_frame_0114.jpg";
-
 int main(int argc, char** argv)
 {
+    if (argc < 2)
+    {
+        std::cerr << "./test_yolo <image_path>";
+        return EXIT_FAILURE;
+    }
+    std::string image_path = argv[1];
+
     InferenceEngine inference_engine;
-    // ImageProcessor image_processor(INPUT_IMG_SIZE, OUTPUT_IMG_SIZE);
 
     inference_engine.init();
-    inference_engine.checkEngineSpecs();
-    // cv::Mat img = cv::imread(IMAGE_PATH, cv::IMREAD_COLOR);
-    // auto flatten = image_processor.flattenImage(img);
+    // inference_engine.checkEngineSpecs();
+
+    cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
+    cv::resize(img, img, INPUT_IMG_SIZE);
+    auto flat_img = flattenImage(img);
+
+    inference_engine.runInference(flat_img);
+    YoloResult result = postProcess(inference_engine);
+    saveResult(result, img);
+
+    return EXIT_SUCCESS;
 }

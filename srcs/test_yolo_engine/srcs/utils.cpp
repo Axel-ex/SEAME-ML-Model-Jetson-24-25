@@ -1,114 +1,155 @@
-#include <filesystem>
-#include <fstream>
-#include <iostream>
+#include "InferenceEngine.hpp"
+#include <opencv2/dnn.hpp>
 #include <utils.hpp>
 
-namespace fs = std::filesystem;
-
-nvinfer1::ICudaEngine* createEngine(const std::string& engine_path,
-                                    nvinfer1::IRuntime* runtime)
+// INPUT should be [all R values] + [all G values] + [all B values] (Input
+// tensor CHW format)
+std::vector<float> flattenImage(cv::Mat& img)
 {
-    std::ifstream file(engine_path, std::ios::binary);
-    if (!file)
+    std::vector<float> flatten_img(3 * INPUT_IMG_SIZE.height *
+                                   INPUT_IMG_SIZE.width);
+
+    for (int c = 0; c < 3; ++c)
     {
-        std::cerr << "Fail to load model: path doesn't exist\n";
-        return nullptr;
-    }
-    std::cout << "Engine file loaded." << std::endl;
-
-    // seek the end of the file to determine engine size
-    file.seekg(0, std::ios::end);
-    size_t size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    // create a file to hold engine data
-    std::vector<char> engineData(size);
-    file.read(engineData.data(), size);
-
-    return runtime->deserializeCudaEngine(engineData.data(), size);
-}
-
-void checkEngineSpecs(nvinfer1::ICudaEngine* engine)
-{
-    int numBindings = engine->getNbBindings();
-    std::cout << "Number of bindings: " << numBindings << std::endl;
-
-    for (int i = 0; i < numBindings; ++i)
-    {
-        const char* name = engine->getBindingName(i);
-        nvinfer1::Dims dims = engine->getBindingDimensions(i);
-        nvinfer1::DataType dtype = engine->getBindingDataType(i);
-        bool isInput = engine->bindingIsInput(i);
-
-        std::cout << "Binding index " << i << ": " << name << std::endl;
-        std::cout << "  Is input: " << (isInput ? "Yes" : "No") << std::endl;
-        std::cout << "  Dimensions: ";
-        for (int j = 0; j < dims.nbDims; ++j)
+        for (int y = 0; y < img.rows; ++y)
         {
-            std::cout << dims.d[j] << " ";
-        }
-        std::cout << std::endl;
-        std::cout << "  Data type: "
-                  << (dtype == nvinfer1::DataType::kFLOAT ? "FLOAT" : "Other")
-                  << std::endl;
-    }
-}
-
-void debugOutput(const std::vector<float>& output_data, cv::Mat& output_image)
-{
-    // Normalize output to 0-255 range
-    cv::Mat display_output;
-    cv::normalize(output_image, display_output, 0, 255, cv::NORM_MINMAX,
-                  CV_8UC1);
-
-    cv::imwrite("results/output_image.jpg", display_output);
-    std::cout << "Output saved to results/output_image.jpg" << std::endl;
-    float min_val = *std::min_element(output_data.begin(), output_data.end());
-    float max_val = *std::max_element(output_data.begin(), output_data.end());
-    std::cout << "Output value range: " << min_val << " to " << max_val
-              << std::endl;
-
-    // Apply treshold
-    float threshold = 0.3;
-    cv::Mat thresholded_output = output_image > threshold;
-    cv::imwrite("results/thresholded_output.jpg", thresholded_output);
-}
-
-std::vector<float> loadImage(const std::string& image_path)
-{
-    // IMAGE LOADING/RESIZING PART --> this is now a function
-    fs::create_directory("results");
-
-    // Load color image
-    cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
-    if (img.empty())
-    {
-        throw std::runtime_error("Failed to load image");
-    }
-    std::cout << "Image size: " << img.cols << "x" << img.rows << std::endl;
-
-    // Resize image to 256x256
-    cv::Mat resized_img;
-    cv::resize(img, resized_img, cv::Size(256, 256));
-
-    // Preparing vector where image data will be stored
-    std::vector<float> og_image(256 * 256 * 3);
-
-    // Fill vector with pixel values (normalized)
-    for (int y = 0; y < resized_img.rows; ++y)
-    {
-        for (int x = 0; x < resized_img.cols; ++x)
-        {
-            cv::Vec3b pixel = resized_img.at<cv::Vec3b>(y, x);
-            // Store the pixel data in the og_image vector (RGB channels) -->
-            // normalized by dividing by 255
-            og_image[(y * resized_img.cols + x) * 3] =
-                static_cast<float>(pixel[2]) / 255.0f; // Red channel
-            og_image[(y * resized_img.cols + x) * 3 + 1] =
-                static_cast<float>(pixel[1]) / 255.0f; // Green channel
-            og_image[(y * resized_img.cols + x) * 3 + 2] =
-                static_cast<float>(pixel[0]) / 255.0f; // Blue channel
+            for (int x = 0; x < img.cols; ++x)
+            {
+                float val =
+                    static_cast<float>(img.at<cv::Vec3b>(y, x)[2 - c]) / 255.0f;
+                flatten_img[c * img.rows * img.cols + y * img.cols + x] = val;
+            }
         }
     }
-    return og_image;
+    return flatten_img;
+}
+
+// NOTE: Our output is 1 25200 85: 25200 elements (bounding / anchor boxes) each
+// of them containing 85 subelements (cx, cy, w, h, obj_confidence,
+// class_prob(80)). coordinates represent the center of the bounding box as well
+// as its width and height 80 class due to COCO dataset
+YoloResult postProcess(InferenceEngine& inference_engine)
+{
+    // Get data from gpu
+    std::vector<float> host_output(inference_engine.getOuputSize() /
+                                   sizeof(float));
+    cudaMemcpy(host_output.data(), inference_engine.getOutputDevicePtr(),
+               inference_engine.getOuputSize(), cudaMemcpyDeviceToHost);
+    for (int i = 0; i < 10; ++i)
+        std::cout << host_output[i] << " ";
+
+    // Loop over the detections (Refer to check_bindings for this information)
+    // WARN: This should be set dynamically
+    const int nb_elements = 25200;
+    const int num_classes = 80;
+    const int element_size = 5 + num_classes;
+
+    float conf_threshold = 0.2;
+    std::vector<cv::Rect> boxes;
+    std::vector<float> confidences;
+    std::vector<int> class_ids;
+
+    for (int i = 0; i < nb_elements; i++)
+    {
+        const float* element = &host_output[i * element_size];
+        float elem_conf = element[4];
+
+        if (elem_conf < conf_threshold)
+            continue;
+
+        // Find class with max score
+        float max_class_prob = 0.0f;
+        int class_id = -1;
+        for (int c = 0; c < num_classes; ++c)
+        {
+            if (element[5 + c] > max_class_prob)
+            {
+                max_class_prob = element[5 + c];
+                class_id = c;
+            }
+        }
+
+        float final_conf = elem_conf * max_class_prob;
+        if (final_conf < conf_threshold)
+            continue;
+
+        // YOLO box format is center_x, center_y, width, height
+        float cx = element[0];
+        float cy = element[1];
+        float w = element[2];
+        float h = element[3];
+
+        int left = static_cast<int>(cx - w / 2.0f);
+        int top = static_cast<int>(cy - h / 2.0f);
+        int width = static_cast<int>(w);
+        int height = static_cast<int>(h);
+
+        boxes.emplace_back(left, top, width, height);
+        confidences.push_back(final_conf);
+        class_ids.push_back(class_id);
+    }
+
+    // Filter with Non-Maximum-Supression (NMS)
+    std::vector<int> indices;
+    float nms_treshold = 0.45f;
+    cv::dnn::NMSBoxes(boxes, confidences, conf_threshold, nms_treshold,
+                      indices);
+
+    YoloResult result;
+
+    for (int idx : indices)
+    {
+        cv::Rect box = boxes[idx];
+        float conf = confidences[idx];
+        int class_id = class_ids[idx];
+        std::cout << "Detected: " << mapIdtoString(class_id) << "(" << conf
+                  << ") at " << box << "\n";
+        result.boxes.push_back(box);
+        result.confidences.push_back(conf);
+        result.class_ids.push_back(class_id);
+    }
+
+    return result;
+}
+
+std::string mapIdtoString(int id)
+{
+    if (id >= 80)
+        return "Invalid id";
+    return COCO_CLASSES[id];
+}
+
+void saveResult(YoloResult& result, cv::Mat& og_image)
+{
+    for (int i = 0; i < result.boxes.size(); i++)
+    {
+        auto box = result.boxes[i];
+        auto id = result.class_ids[i];
+        auto confidence = result.confidences[i];
+
+        cv::rectangle(og_image, box, cv::Scalar(255, 0, 0));
+
+        // Compose the label
+        std::string label = mapIdtoString(id);
+        label += " (" + cv::format("%.2f", confidence) + ")";
+
+        // Calculate label position
+        int baseline = 0;
+        cv::Size label_size =
+            cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseline);
+        int top = std::max(box.y, label_size.height);
+
+        // Draw white backgroung
+        cv::rectangle(og_image, cv::Point(box.x, top - label_size.height),
+                      cv::Point(box.x + label_size.width, top + baseline),
+                      cv::Scalar(255, 255, 255), cv::FILLED);
+
+        // Draw it
+        cv::putText(og_image, label, cv::Point(box.x, top),
+                    cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 0, 0));
+    }
+
+    std::string output_name = "results/test_yolo_output.jpg";
+    cv::imwrite(output_name, og_image);
+    std::cout << "Output saved as " << output_name << std::endl;
 }
