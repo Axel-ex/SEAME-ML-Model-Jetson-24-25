@@ -2,17 +2,18 @@
 #include <utils.hpp>
 #include <vector>
 
+const std::string ENGINE_PATH("/home/axel/models/engines/unet_base.engine");
+
 int main(int argc, char** argv)
 {
     Logger logger;
 
-    if (argc < 3)
+    if (argc < 2)
     {
-        std::cerr << "./test_engine <model_path> <image_path>\n";
+        std::cerr << "./test_engine <image_path>\n";
         return -1;
     }
-    std::string engine_path(argv[1]);
-    std::string img_path(argv[2]);
+    std::string img_path(argv[1]);
 
     // Create TensorRT runtime - to deserealize model and process inference
     nvinfer1::IRuntime* runtime = nvinfer1::createInferRuntime(logger);
@@ -22,7 +23,7 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    nvinfer1::ICudaEngine* engine = createEngine(engine_path, runtime);
+    nvinfer1::ICudaEngine* engine = createEngine(ENGINE_PATH, runtime);
     if (!engine)
     {
         std::cerr << "Error: Failed to deserialize engine" << std::endl;

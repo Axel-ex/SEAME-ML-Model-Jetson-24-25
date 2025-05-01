@@ -140,12 +140,10 @@ void saveResult(const YoloResult& result, cv::Mat& og_image)
             cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseline);
         int top = std::max(box.y, label_size.height);
 
-        // Draw white backgroung
+        // Draw the label with backgorund
         cv::rectangle(og_image, cv::Point(box.x, top - label_size.height),
                       cv::Point(box.x + label_size.width, top + baseline),
                       cv::Scalar(255, 255, 255), cv::FILLED);
-
-        // Draw it
         cv::putText(og_image, label, cv::Point(box.x, top),
                     cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 0, 0));
     }

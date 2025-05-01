@@ -7,7 +7,8 @@ This repository provides example C++ code for running inference using the **Tens
 ## 📁 Repo Structure
 
 - **`benchmarking/`** — Runs performance benchmarking on multiple `.engine` files. Reports FPS and inference time.
-- **`test_engine/`** — Performs inference on a single image. Useful for debugging or understanding TensorRT integration.
+- **`test_unet_engine/`** — Performs inference on a single image using Unet. Useful for debugging and understanding TensorRT C++ integration.
+- **`test_yolo_engine/`** — Performs inference on a single image using Yolov5.
 
 ---
 
@@ -16,7 +17,7 @@ This repository provides example C++ code for running inference using the **Tens
 You can compile either of the tools using `cmake`:
 
 ```
-cd srcs/<name>  # Replace <name> with 'benchmarking' or 'test_engine'
+cd srcs/<name>  # Replace <name> with 'benchmarking' / 'test_unet_engine' / 'test_yolo_engine'
 cmake -B build
 cmake --build build
 ```
@@ -28,13 +29,15 @@ cmake --build build
 ### Inference on a Single Image (Debug/Test Mode)
 
 ```
-./build/test_engine <model_path> <image_path>
+./build/test_unet <image_path>
 ```
 
 Example:
 
 ```
-./build/test_engine ./optimized.engine ../../images/road.jpg
+./build/test_unet ../../images/unet/road.jpg
+
+./build/test_yolo ../../images/yolo/scene.jpg
 ```
 
 ---
