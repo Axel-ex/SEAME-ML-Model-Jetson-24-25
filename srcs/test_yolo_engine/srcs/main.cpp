@@ -21,6 +21,7 @@ int main(int argc, char** argv)
 
     inference_engine.runInference(flat_img);
     YoloResult result = postProcess(inference_engine);
+    printResult(result);
     saveResult(result, img);
 
     return EXIT_SUCCESS;

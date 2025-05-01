@@ -36,4 +36,5 @@ struct YoloResult
 std::vector<float> flattenImage(cv::Mat& img);
 YoloResult postProcess(InferenceEngine& inference_engine);
 std::string mapIdtoString(int id);
-void saveResult(YoloResult& result, cv::Mat& og_img);
+void printResult(const YoloResult& result);
+void saveResult(const YoloResult& result, cv::Mat& og_img);

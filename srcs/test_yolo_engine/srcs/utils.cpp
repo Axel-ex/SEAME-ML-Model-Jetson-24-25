@@ -28,6 +28,15 @@ std::vector<float> flattenImage(cv::Mat& img)
 // of them containing 85 subelements (cx, cy, w, h, obj_confidence,
 // class_prob(80)). coordinates represent the center of the bounding box as well
 // as its width and height 80 class due to COCO dataset
+
+/**
+ * @brief extract the inference result from GPU , post process the data to
+ * filter for the predictions with highest confidence, construct a YoloResult
+ * from the computations
+ *
+ * @param inference_engine
+ * @return
+ */
 YoloResult postProcess(InferenceEngine& inference_engine)
 {
     // Get data from gpu
@@ -35,11 +44,8 @@ YoloResult postProcess(InferenceEngine& inference_engine)
                                    sizeof(float));
     cudaMemcpy(host_output.data(), inference_engine.getOutputDevicePtr(),
                inference_engine.getOuputSize(), cudaMemcpyDeviceToHost);
-    for (int i = 0; i < 10; ++i)
-        std::cout << host_output[i] << " ";
 
     // Loop over the detections (Refer to check_bindings for this information)
-    // WARN: This should be set dynamically
     const int nb_elements = 25200;
     const int num_classes = 80;
     const int element_size = 5 + num_classes;
@@ -89,7 +95,7 @@ YoloResult postProcess(InferenceEngine& inference_engine)
         class_ids.push_back(class_id);
     }
 
-    // Filter with Non-Maximum-Supression (NMS)
+    // Filter with non maximum suppression (NMS)
     std::vector<int> indices;
     float nms_treshold = 0.45f;
     cv::dnn::NMSBoxes(boxes, confidences, conf_threshold, nms_treshold,
@@ -99,14 +105,9 @@ YoloResult postProcess(InferenceEngine& inference_engine)
 
     for (int idx : indices)
     {
-        cv::Rect box = boxes[idx];
-        float conf = confidences[idx];
-        int class_id = class_ids[idx];
-        std::cout << "Detected: " << mapIdtoString(class_id) << "(" << conf
-                  << ") at " << box << "\n";
-        result.boxes.push_back(box);
-        result.confidences.push_back(conf);
-        result.class_ids.push_back(class_id);
+        result.boxes.push_back(boxes[idx]);
+        result.confidences.push_back(confidences[idx]);
+        result.class_ids.push_back(class_ids[idx]);
     }
 
     return result;
@@ -119,7 +120,7 @@ std::string mapIdtoString(int id)
     return COCO_CLASSES[id];
 }
 
-void saveResult(YoloResult& result, cv::Mat& og_image)
+void saveResult(const YoloResult& result, cv::Mat& og_image)
 {
     for (int i = 0; i < result.boxes.size(); i++)
     {
@@ -152,4 +153,16 @@ void saveResult(YoloResult& result, cv::Mat& og_image)
     std::string output_name = "results/test_yolo_output.jpg";
     cv::imwrite(output_name, og_image);
     std::cout << "Output saved as " << output_name << std::endl;
+}
+
+void printResult(const YoloResult& result)
+{
+    for (int i = 0; i < result.boxes.size(); i++)
+    {
+        cv::Rect box = result.boxes[i];
+        float conf = result.confidences[i];
+        int class_id = result.class_ids[i];
+        std::cout << "Detected: " << mapIdtoString(class_id) << "(" << conf
+                  << ") at " << box << "\n";
+    }
 }
