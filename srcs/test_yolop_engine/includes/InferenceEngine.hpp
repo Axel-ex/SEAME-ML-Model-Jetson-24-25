@@ -72,8 +72,8 @@ class InferenceEngine
         void checkEngineSpecs();
 
         std::array<float*, 3> getOutputDevicePtrs() const;
+        std::array<size_t, 3> getOuputSizes() const;
         size_t getInputSize() const;
-        // size_t getOuputSize() const;
 
     private:
         TrtUniquePtr<IRuntime> runtime_;

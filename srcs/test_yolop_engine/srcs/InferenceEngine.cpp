@@ -189,7 +189,10 @@ std::array<float*, 3> InferenceEngine::getOutputDevicePtrs() const
             static_cast<float*>(d_output_lane_seg_.get())};
 }
 
-// size_t InferenceEngine::getOuputSize() const { return output_size_; }
+std::array<size_t, 3> InferenceEngine::getOuputSizes() const
+{
+    return {output_det_size_, output_road_seg_size_, output_lane_seg_size_};
+}
 
 size_t InferenceEngine::getInputSize() const { return input_size_; }
 

@@ -29,9 +29,13 @@ int main(int argc, char** argv)
     auto flat_img = flattenImage(img);
 
     inference_engine.runInference(flat_img);
-    // YoloResult result = postProcess(inference_engine);
-    // printResult(result);
-    // saveResult(result, img);
-    //
+
+    YoloResult result = postProcessObjDetection(inference_engine);
+    printResult(result);
+    saveYoloResult(result, img);
+
+    cv::Mat lane_mask = getLaneMask(inference_engine);
+    cv::imwrite("results/yolop_lane_mask.jpg", lane_mask);
+
     return EXIT_SUCCESS;
 }
