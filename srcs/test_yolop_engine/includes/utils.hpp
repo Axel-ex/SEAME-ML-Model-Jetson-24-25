@@ -17,5 +17,5 @@ std::vector<float> flattenImage(cv::Mat& img);
 YoloResult postProcessObjDetection(InferenceEngine& inference_engine);
 std::string mapIdtoString(int id);
 void printResult(const YoloResult& result);
-void saveYoloResult(const YoloResult& result, cv::Mat& og_img);
+void drawYoloResult(const YoloResult& result, cv::Mat& og_img);
 cv::Mat getLaneMask(InferenceEngine& inference_engine);

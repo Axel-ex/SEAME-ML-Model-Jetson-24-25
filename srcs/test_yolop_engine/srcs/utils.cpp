@@ -114,7 +114,7 @@ std::string mapIdtoString(int id)
     return YOLOP_CLASSES[id];
 }
 
-void saveYoloResult(const YoloResult& result, cv::Mat& og_image)
+void drawYoloResult(const YoloResult& result, cv::Mat& og_image)
 {
     for (int i = 0; i < result.boxes.size(); i++)
     {
@@ -122,7 +122,7 @@ void saveYoloResult(const YoloResult& result, cv::Mat& og_image)
         auto id = result.class_ids[i];
         auto confidence = result.confidences[i];
 
-        cv::rectangle(og_image, box, cv::Scalar(255, 0, 0));
+        cv::rectangle(og_image, box, cv::Scalar(0, 0, 255));
 
         // Compose the label
         // std::string label = mapIdtoString(id);
@@ -142,10 +142,6 @@ void saveYoloResult(const YoloResult& result, cv::Mat& og_image)
         // cv::putText(og_image, label, cv::Point(box.x, top),
         //             cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 0, 0));
     }
-
-    std::string output_name = "results/test_yolop_output.jpg";
-    cv::imwrite(output_name, og_image);
-    std::cout << "Output saved as " << output_name << std::endl;
 }
 
 cv::Mat getLaneMask(InferenceEngine& inference_engine)
@@ -153,11 +149,30 @@ cv::Mat getLaneMask(InferenceEngine& inference_engine)
     float* output_ptr = inference_engine.getOutputDevicePtrs()[2];
     size_t output_size = inference_engine.getOuputSizes()[2];
 
+    // Output size = 2 x 640 x 640 floats (2 channels)
     std::vector<float> lane_mask_data(output_size / sizeof(float));
     cudaMemcpy(lane_mask_data.data(), output_ptr, output_size,
                cudaMemcpyDeviceToHost);
 
-    return cv::Mat(INPUT_IMG_SIZE, CV_32FC1, lane_mask_data.data());
+    const int height = INPUT_IMG_SIZE.height;
+    const int width = INPUT_IMG_SIZE.width;
+    const int channels = 2;
+
+    // Argmax to get binary mask
+    cv::Mat lane_mask(height, width, CV_8UC1);
+
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            float val0 = lane_mask_data[0 * height * width + y * width + x];
+            float val1 = lane_mask_data[1 * height * width + y * width + x];
+            lane_mask.at<uchar>(y, x) =
+                (val1 > val0) ? 255 : 0; // 255 = lane, 0 = background
+        }
+    }
+
+    return lane_mask;
 }
 
 void printResult(const YoloResult& result)

@@ -32,10 +32,15 @@ int main(int argc, char** argv)
 
     YoloResult result = postProcessObjDetection(inference_engine);
     printResult(result);
-    saveYoloResult(result, img);
+    drawYoloResult(result, img);
 
     cv::Mat lane_mask = getLaneMask(inference_engine);
-    cv::imwrite("results/yolop_lane_mask.jpg", lane_mask);
+    cv::Mat colored;
+
+    // Blend the result into a single image
+    cv::applyColorMap(lane_mask, colored, cv::COLORMAP_JET);
+    cv::addWeighted(img, 0.7, colored, 0.3, 0, img);
+    cv::imwrite("results/yolop_result.jpg", img);
 
     return EXIT_SUCCESS;
 }
