@@ -1,5 +1,6 @@
 #include <InferenceEngine.hpp>
 #include <Logger.hpp>
+#include <array>
 #include <fstream>
 
 /**
@@ -56,7 +57,8 @@ bool InferenceEngine::init()
     std::cout << "context succefully created";
 
     allocateDevices();
-    if (!d_input_ || !d_output_)
+    if (!d_input_ || !d_output_det_ || !d_output_road_seg_ ||
+        !d_output_lane_seg_)
         return false;
 
     return true;
@@ -95,33 +97,60 @@ ICudaEngine* InferenceEngine::createCudaEngine()
 void InferenceEngine::allocateDevices()
 {
     const int input_index = engine_->getBindingIndex(INPUT_LAYER_NAME);
-    const int output_index = engine_->getBindingIndex(OUTPUT_LAYER_NAME);
+    const int obj_det_index = engine_->getBindingIndex(OUTPUT_OBJECT_DETECTION);
+    const int road_seg_index =
+        engine_->getBindingIndex(OUTPUT_ROAD_SEGMENTATION);
+    const int lane_seg_index =
+        engine_->getBindingIndex(OUTPUT_LANE_SEGMENTATION);
 
     Dims input_dims = engine_->getBindingDimensions(input_index);
-    Dims output_dims = engine_->getBindingDimensions(output_index);
+    Dims obj_det_dims = engine_->getBindingDimensions(obj_det_index);
+    Dims road_seg_dims = engine_->getBindingDimensions(road_seg_index);
+    Dims lane_seg_dims = engine_->getBindingDimensions(lane_seg_index);
 
     for (int i = 0; i < input_dims.nbDims; i++)
         input_size_ *= input_dims.d[i];
     input_size_ *= sizeof(float);
 
-    for (int i = 0; i < output_dims.nbDims; i++)
-        output_size_ *= output_dims.d[i];
-    output_size_ *= sizeof(float);
+    // Object detection
+    for (int i = 0; i < obj_det_dims.nbDims; i++)
+        output_det_size_ *= obj_det_dims.d[i];
+    output_det_size_ *= sizeof(float);
+
+    // Road segmentation
+    for (int i = 0; i < road_seg_dims.nbDims; i++)
+        output_road_seg_size_ *= road_seg_dims.d[i];
+    output_road_seg_size_ *= sizeof(float);
+
+    // Lane segmentation
+    for (int i = 0; i < lane_seg_dims.nbDims; i++)
+        output_lane_seg_size_ *= lane_seg_dims.d[i];
+    output_lane_seg_size_ *= sizeof(float);
 
     // allocate memory and transfer ownership to our smartpointer
     void* raw_input_ptr = nullptr;
-    void* raw_output_ptr = nullptr;
+    void* obj_det_ptr = nullptr;
+    void* road_seg_ptr = nullptr;
+    void* lane_seg_ptr = nullptr;
 
     cudaError_t input_err = cudaMalloc(&raw_input_ptr, input_size_);
-    cudaError_t output_err = cudaMalloc(&raw_output_ptr, output_size_);
-    if (input_err != cudaSuccess || output_err != cudaSuccess)
+    cudaError_t output_err = cudaMalloc(&obj_det_ptr, output_det_size_);
+    cudaError_t output_err2 = cudaMalloc(&road_seg_ptr, output_road_seg_size_);
+    cudaError_t output_err3 = cudaMalloc(&lane_seg_ptr, output_lane_seg_size_);
+
+    if (input_err != cudaSuccess || output_err != cudaSuccess ||
+        output_err2 != cudaSuccess || output_err3 != cudaSuccess)
+    {
         std::cerr << "An error occured while allocating for input / output "
                      "device: input: "
                   << cudaGetErrorString(input_err)
-                  << ", output: " << cudaGetErrorString(output_err);
+                  << ", output1: " << cudaGetErrorString(output_err);
+    }
 
     d_input_.reset(raw_input_ptr);
-    d_output_.reset(raw_output_ptr);
+    d_output_det_.reset(obj_det_ptr);
+    d_output_road_seg_.reset(road_seg_ptr);
+    d_output_lane_seg_.reset(lane_seg_ptr);
 }
 
 /**
@@ -139,7 +168,8 @@ bool InferenceEngine::runInference(const std::vector<float>& flat_img) const
     cudaMemcpy(d_input_.get(), flat_img.data(), input_size_,
                cudaMemcpyHostToDevice);
 
-    void* bindings[2] = {d_input_.get(), d_output_.get()};
+    void* bindings[4] = {d_input_.get(), d_output_det_.get(),
+                         d_output_road_seg_.get(), d_output_lane_seg_.get()};
     bool status = context_->executeV2(bindings);
     return status;
 }
@@ -152,12 +182,14 @@ bool InferenceEngine::runInference(const std::vector<float>& flat_img) const
  *
  * @return float* Pointer to device memory containing the output tensor.
  */
-float* InferenceEngine::getOutputDevicePtr() const
+std::array<float*, 3> InferenceEngine::getOutputDevicePtrs() const
 {
-    return static_cast<float*>(d_output_.get());
+    return {static_cast<float*>(d_output_det_.get()),
+            static_cast<float*>(d_output_road_seg_.get()),
+            static_cast<float*>(d_output_lane_seg_.get())};
 }
 
-size_t InferenceEngine::getOuputSize() const { return output_size_; }
+// size_t InferenceEngine::getOuputSize() const { return output_size_; }
 
 size_t InferenceEngine::getInputSize() const { return input_size_; }
 

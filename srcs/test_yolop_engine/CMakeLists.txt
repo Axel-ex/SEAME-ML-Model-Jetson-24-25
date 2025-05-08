@@ -19,6 +19,7 @@ include_directories(${TENSORRT_INCLUDE_DIRS})
 link_directories(${TENSORRT_LIB_DIR})
 
 find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui cudaimgproc cudawarping cudafilters dnn)
+find_package(fmt REQUIRED)
 
 include_directories(includes)
 
@@ -35,4 +36,5 @@ target_link_libraries(${PROJECT_NAME}
   nvinfer_plugin
   ${CUDA_LIBRARIES}
   stdc++fs
+  fmt::fmt
 )

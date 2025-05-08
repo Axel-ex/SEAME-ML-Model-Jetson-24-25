@@ -1,4 +1,6 @@
 #include <Logger.hpp>
+#include <fmt/color.h>
+#include <fmt/format.h>
 #include <utils.hpp>
 
 int main(int argc, char** argv)
@@ -15,11 +17,18 @@ int main(int argc, char** argv)
     inference_engine.init();
     inference_engine.checkEngineSpecs();
 
-    // cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
-    // cv::resize(img, img, INPUT_IMG_SIZE);
-    // auto flat_img = flattenImage(img);
-    //
-    // inference_engine.runInference(flat_img);
+    cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
+    if (img.empty())
+    {
+        fmt::print("[{}]: reading the image: {} doesnt exist",
+                   fmt::format(fmt::fg(fmt::color::indian_red), "Error"),
+                   image_path);
+        return EXIT_FAILURE;
+    }
+    cv::resize(img, img, INPUT_IMG_SIZE);
+    auto flat_img = flattenImage(img);
+
+    inference_engine.runInference(flat_img);
     // YoloResult result = postProcess(inference_engine);
     // printResult(result);
     // saveResult(result, img);

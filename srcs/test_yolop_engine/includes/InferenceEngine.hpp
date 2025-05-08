@@ -1,6 +1,7 @@
 #pragma once
 
 #include <NvInfer.h>
+#include <array>
 #include <iostream>
 #include <memory>
 #include <opencv2/opencv.hpp>
@@ -9,7 +10,9 @@ using namespace nvinfer1;
 
 constexpr auto ENGINE_PATH = "/home/axel/models/engines/yolop-640-640.engine";
 constexpr auto INPUT_LAYER_NAME = "images";
-constexpr auto OUTPUT_LAYER_NAME = "output0";
+constexpr auto OUTPUT_OBJECT_DETECTION = "det_out";
+constexpr auto OUTPUT_ROAD_SEGMENTATION = "drive_area_seg";
+constexpr auto OUTPUT_LANE_SEGMENTATION = "lane_line_seg";
 
 /**
  * @brief custom deleter for TRT objects
@@ -68,18 +71,26 @@ class InferenceEngine
         bool runInference(const std::vector<float>& flat_img) const;
         void checkEngineSpecs();
 
-        float* getOutputDevicePtr() const;
+        std::array<float*, 3> getOutputDevicePtrs() const;
         size_t getInputSize() const;
-        size_t getOuputSize() const;
+        // size_t getOuputSize() const;
 
     private:
         TrtUniquePtr<IRuntime> runtime_;
         TrtUniquePtr<IExecutionContext> context_;
         TrtUniquePtr<ICudaEngine> engine_;
+
+        // YOLOP: multi output. 3 different output with 3 differents sizes to
+        // keep track of: objects detection, road surface segmentation and lane
+        // segmentation
         size_t input_size_{1};
-        size_t output_size_{1};
+        size_t output_det_size_{1};
+        size_t output_road_seg_size_{1};
+        size_t output_lane_seg_size_{1};
         CudaUniquePtr<void> d_input_;
-        CudaUniquePtr<void> d_output_;
+        CudaUniquePtr<void> d_output_det_;
+        CudaUniquePtr<void> d_output_road_seg_;
+        CudaUniquePtr<void> d_output_lane_seg_;
 
         ICudaEngine* createCudaEngine();
         void allocateDevices();
